@@ -1,0 +1,30 @@
+{
+  "name": "verify-bitgo-keys",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "start": "yarn run ts-node index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zahin-mohammad/verify-bitgo-keys.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zahin-mohammad/verify-bitgo-keys/issues"
+  },
+  "homepage": "https://github.com/zahin-mohammad/verify-bitgo-keys#readme",
+  "dependencies": {
+    "@bitgo/sdk-api": "^1.11.3",
+    "@bitgo/sdk-core": "^8.11.0",
+    "bitgo": "^19.5.0",
+    "cmd-ts": "^0.13.0",
+    "dotenv": "^16.3.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.6",
+    "typescript-cached-transpile": "^0.0.6"
+  }
+}
