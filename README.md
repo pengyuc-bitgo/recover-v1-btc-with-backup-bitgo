@@ -26,6 +26,7 @@ yarn start --keyType user --walletPassword 123
 
 ### Recover Funds from Wallet Using Backup Key
 
+**Access Token for this script requires a spending limit!**
 **Please contact support before attempting this recovery**
 
 ```
