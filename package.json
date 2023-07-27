@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "yarn run ts-node index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "recover": "yarn run ts-node recoverUtxoBackupBitgo.ts"
   },
   "repository": {
     "type": "git",
@@ -18,8 +18,11 @@
   },
   "homepage": "https://github.com/zahin-mohammad/verify-bitgo-keys#readme",
   "dependencies": {
+    "@bitgo/abstract-utxo": "^3.3.0",
+    "@bitgo/blockapis": "^1.7.1",
     "@bitgo/sdk-api": "^1.11.3",
     "@bitgo/sdk-core": "^8.11.0",
+    "@bitgo/utxo-lib": "^9.3.0",
     "bitgo": "^19.5.0",
     "cmd-ts": "^0.13.0",
     "dotenv": "^16.3.1",

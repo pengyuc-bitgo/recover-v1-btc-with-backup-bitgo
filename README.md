@@ -5,6 +5,8 @@
 
 ## Usage
 
+### Verify Access to Keys
+
 ```
 yarn
 yarn start --walletId 123 --keyType backup --env test --walletPassword 456 --accessToken 789
@@ -20,4 +22,13 @@ With the above added as environment variables will be:
 
 ```
 yarn start --keyType user --walletPassword 123
+```
+
+### Recover Funds from Wallet Using Backup Key
+
+**Please contact support before attempting this recovery**
+
+```
+# usage
+yarn run --accessToken XXX --walletId XXX --walletPassword XXX --destination XXX --env XXX --blockChairApiKey XXX
 ```
