@@ -31,5 +31,5 @@ yarn start --keyType user --walletPassword 123
 
 ```
 # usage
-yarn run --accessToken XXX --walletId XXX --walletPassword XXX --destination XXX --env XXX --blockChairApiKey XXX
+yarn recover --accessToken XXX --walletId XXX --walletPassword XXX --destination XXX --env XXX --blockChairApiKey XXX
 ```
