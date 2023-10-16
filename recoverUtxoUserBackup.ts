@@ -1,32 +1,29 @@
 import * as dotenv from "dotenv";
-dotenv.config();
-
+import {BaseCoin, bitcoin, EnvironmentName, isTriple,} from "@bitgo/sdk-core";
+import {BitGo} from "bitgo";
+import {command, run} from "cmd-ts";
 import {
-  BaseCoin,
-  EnvironmentName,
-  Keychains,
-  Wallet,
-  isTriple,
-} from "@bitgo/sdk-core";
-import { BitGo } from "bitgo";
-import { command, run } from "cmd-ts";
-import {
-  walletIdFlag,
+  accessTokenFlag,
+  backupKeyFlag,
+  bitgoPubKeyFlag,
+  blockChairApiKeyFlag,
   envFlag,
   passwordFlag,
-  accessTokenFlag,
   recoveryDestinationFlag,
-  blockChairApiKeyFlag,
+  userKeyFlag,
+  walletIdFlag,
 } from "./common";
 import {
   AbstractUtxoCoin,
-  FormattedOfflineVaultTxInfo,
   backupKeyRecovery,
+  FormattedOfflineVaultTxInfo,
   signAndVerifyWalletTransaction,
 } from "@bitgo/abstract-utxo";
-import { Transaction, bip32 } from "@bitgo/utxo-lib";
 import * as utxolib from "@bitgo/utxo-lib";
-import { BlockchairApi } from "@bitgo/blockapis";
+import {bip32, Transaction} from "@bitgo/utxo-lib";
+import {BlockchairApi} from "@bitgo/blockapis";
+
+dotenv.config();
 
 function assertIsUtxo(coin: BaseCoin): asserts coin is AbstractUtxoCoin {
   if (!(coin instanceof AbstractUtxoCoin)) {
@@ -41,45 +38,29 @@ export async function main(args: {
   accessToken: string;
   recoveryDestination: string;
   blockChairApiKey: string;
+  userKey: string;
+  backupKey: string;
+  bitgoPubKey: string;
 }) {
   console.log({
     ...args,
     accessToken: "REDACTED",
     walletPassword: "REDACTED",
     blockChairApiKey: "REDACTED",
+    userKey: "REDACTED",
+    backupKey: "REDACTED",
   });
+
   const sdk = new BitGo({ env: args.env, accessToken: args.accessToken });
-  const walletJSON = await sdk
-    .get(sdk.url(`/wallet/${args.walletId}`, 2))
-    .result();
-
-  const coin = sdk.coin(walletJSON.coin);
+  const coin = sdk.coin("btc");
   assertIsUtxo(coin);
-
-  const wallet = new Wallet(sdk, coin, walletJSON);
-  const keychains = new Keychains(sdk, coin);
-  const userKey = await keychains.get({
-    id: wallet.keyIds()[0],
-  });
-  const backupKey = await keychains.get({
-    id: wallet.keyIds()[1],
-  });
-  const bitgoKey = await keychains.get({
-    id: wallet.keyIds()[2],
-  });
-  if (!userKey.pub || !backupKey.pub || !bitgoKey.pub) {
-    throw new Error("keys are missing pubs");
-  }
-  if (!backupKey.encryptedPrv) {
-    throw new Error("backup key missing encryptedPrv");
-  }
 
   // build unsigned sweep
   const { txBuilder, unspents } = await (async () => {
     const { txHex, txInfo } = (await backupKeyRecovery(coin, sdk, {
-      userKey: userKey.pub!,
-      backupKey: backupKey.pub!,
-      bitgoKey: bitgoKey.pub!,
+      userKey: args.userKey,
+      backupKey: args.backupKey,
+      bitgoKey: args.bitgoPubKey,
       walletPassphrase: args.walletPassword,
       recoveryDestination: args.recoveryDestination,
       scan: 20,
@@ -129,53 +110,42 @@ export async function main(args: {
   // Transaction
 
   // sign with backup key
+  const userKeyBase58 = sdk.decrypt({
+    password: args.walletPassword,
+    input: args.userKey,
+  });
+  const backupKeyBase58 = sdk.decrypt({
+    password: args.walletPassword,
+    input: args.backupKey,
+  });
+
   const keys = [
-    bip32.fromBase58(userKey.pub),
-    bip32.fromBase58(
-      sdk.decrypt({
-        password: args.walletPassword,
-        input: backupKey.encryptedPrv,
-      })
-    ),
-    bip32.fromBase58(bitgoKey.pub),
+    bip32.fromBase58(userKeyBase58),
+    bip32.fromBase58(backupKeyBase58),
+    bip32.fromBase58(args.bitgoPubKey),
   ];
   if (!isTriple(keys)) {
     throw new Error(`expected key triple`);
   }
-  const walletKeys = new utxolib.bitgo.RootWalletKeys(keys, [
-    utxolib.bitgo.RootWalletKeys.defaultPrefix,
-    utxolib.bitgo.RootWalletKeys.defaultPrefix,
-    utxolib.bitgo.RootWalletKeys.defaultPrefix,
-  ]);
+  // no derive path for v1 safe wallets
+  const walletKeys = new utxolib.bitgo.RootWalletKeys(keys, /*["","","",]*/);
+
   const tx = signAndVerifyWalletTransaction<number>(
     txBuilder,
     unspents,
     new utxolib.bitgo.WalletUnspentSigner<utxolib.bitgo.RootWalletKeys>(
       walletKeys,
-      walletKeys.backup,
-      walletKeys.bitgo
+      walletKeys.user,
+      walletKeys.backup
     ),
-    { isLastSignature: false }
+    { isLastSignature: true }
   );
 
-  // send half signed
-  try {
-    const sendParams = {
-      txHex: tx.toHex(),
-    };
-    const sendRes = await sdk
-      .post(sdk.url(`/${coin.getChain()}/wallet/${wallet.id()}/tx/send`, 2))
-      .send(sendParams)
-      .result();
-    console.log(JSON.stringify(sendRes, null, 2));
-  } catch (e) {
-    console.error(e);
-    throw e;
-  }
+  console.log("signed tx", tx.toHex());
 }
 
 const app = command({
-  name: "yarn start",
+  name: "yarn restore",
   args: {
     walletId: walletIdFlag,
     env: envFlag,
@@ -183,6 +153,9 @@ const app = command({
     accessToken: accessTokenFlag,
     recoveryDestination: recoveryDestinationFlag,
     blockChairApiKey: blockChairApiKeyFlag,
+    userKey: userKeyFlag,
+    backupKey: backupKeyFlag,
+    bitgoPubKey: bitgoPubKeyFlag,
   },
   handler: async (args) => {
     try {

@@ -21,6 +21,13 @@ export const accessTokenFlag = option({
 
 export const passwordFlag = option({
   type: string,
+  defaultValue: () => {
+    const password = process.env.WALLET_PASSCODE;
+    if (!password) {
+      throw new Error("WALLET_PASSCODE env var not set");
+    }
+    return password;
+  },
   long: "walletPassword",
   short: "p",
   description: "The wallet passphrase for the wallet associated to walletId.",
@@ -84,14 +91,6 @@ export const KeyTypeDecoder: Type<string, KeyType> = {
   },
 };
 
-export const keyTypeFlag = option({
-  type: KeyTypeDecoder,
-  long: "keyType",
-  short: "k",
-  defaultValue: () => keyTypes[0],
-  description: "Wether to verify user or backup key.",
-});
-
 export const envDecoder: Type<string, EnvironmentName> = {
   async from(str: string): Promise<EnvironmentName> {
     if (Environments[str as keyof typeof Environments] !== undefined) {
@@ -114,4 +113,64 @@ export const envFlag = option({
   },
   description:
     "BitGo environment. If not provided, the env var BITGO_ENV will be used.",
+});
+
+export const userKeyFlag = option({
+  type: string,
+  defaultValue: () => {
+    const userKey = process.env.USER_KEY;
+    if (!userKey) {
+      throw new Error("USER_KEY env var not set");
+    }
+    return userKey;
+  },
+  long: "userKey",
+  short: "u",
+  description:
+      "Encrypted user private key (xprv)",
+});
+
+export const backupKeyFlag = option({
+  type: string,
+  defaultValue: () => {
+    const backupKey = process.env.BACKUP_KEY;
+    if (!backupKey) {
+      throw new Error("BACKUP_KEY env var not set");
+    }
+    return backupKey;
+  },
+  long: "backupKey",
+  short: "b",
+  description:
+      "Encrypted backup private key (xprv)",
+});
+
+export const bitgoPubKeyFlag = option({
+  type: string,
+  defaultValue: () => {
+    const bitgoPubkey = process.env.BITGO_PUB_KEY;
+    if (!bitgoPubkey) {
+      throw new Error("BITGO_PUB_KEY env var not set");
+    }
+    return bitgoPubkey;
+  },
+  long: "bitgoPubkey",
+  short: "g",
+  description:
+      "Bitgo public key in plain text",
+});
+
+export const redeemScriptFlag = option({
+  type: string,
+  defaultValue: () => {
+    const redeemScript = process.env.REDEEM_SCRIPT;
+    if (!redeemScript) {
+      throw new Error("REDEEM_SCRIPT env var not set");
+    }
+    return redeemScript;
+  },
+  long: "redeemScript",
+  short: "r",
+  description:
+      "Redeem script in plain text",
 });
