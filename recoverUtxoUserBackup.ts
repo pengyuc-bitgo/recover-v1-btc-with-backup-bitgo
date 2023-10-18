@@ -1,27 +1,20 @@
 import * as dotenv from "dotenv";
-import {BaseCoin, bitcoin, EnvironmentName, isTriple,} from "@bitgo/sdk-core";
+import {BaseCoin, EnvironmentName,} from "@bitgo/sdk-core";
 import {BitGo} from "bitgo";
 import {command, run} from "cmd-ts";
 import {
-  accessTokenFlag,
   backupKeyFlag,
-  bitgoPubKeyFlag,
-  blockChairApiKeyFlag,
   envFlag,
+  feeFlag, inputHashFlag,
+  nonWitnessUtxoFlag,
   passwordFlag,
+  recoveryBalanceFlag,
   recoveryDestinationFlag,
+  redeemScriptFlag,
   userKeyFlag,
-  walletIdFlag,
 } from "./common";
-import {
-  AbstractUtxoCoin,
-  backupKeyRecovery,
-  FormattedOfflineVaultTxInfo,
-  signAndVerifyWalletTransaction,
-} from "@bitgo/abstract-utxo";
+import {AbstractUtxoCoin,} from "@bitgo/abstract-utxo";
 import * as utxolib from "@bitgo/utxo-lib";
-import {bip32, Transaction} from "@bitgo/utxo-lib";
-import {BlockchairApi} from "@bitgo/blockapis";
 
 dotenv.config();
 
@@ -32,130 +25,93 @@ function assertIsUtxo(coin: BaseCoin): asserts coin is AbstractUtxoCoin {
 }
 
 export async function main(args: {
-  walletId: string;
   env: EnvironmentName;
   walletPassword: string;
-  accessToken: string;
   recoveryDestination: string;
-  blockChairApiKey: string;
   userKey: string;
   backupKey: string;
-  bitgoPubKey: string;
+  redeemScript: string;
+  nonWitnessUtxo: string;
+  balance: string;
+  fee: string;
+  inputHash: string;
 }) {
-  console.log({
-    ...args,
-    accessToken: "REDACTED",
-    walletPassword: "REDACTED",
-    blockChairApiKey: "REDACTED",
-    userKey: "REDACTED",
-    backupKey: "REDACTED",
-  });
-
-  const sdk = new BitGo({ env: args.env, accessToken: args.accessToken });
-  const coin = sdk.coin("btc");
+  const sdk = new BitGo({ env: args.env });
+  const coin = sdk.coin(args.env === 'prod' ? "btc" : "tbtc");
   assertIsUtxo(coin);
 
-  // build unsigned sweep
-  const { txBuilder, unspents } = await (async () => {
-    const { txHex, txInfo } = (await backupKeyRecovery(coin, sdk, {
-      userKey: args.userKey,
-      backupKey: args.backupKey,
-      bitgoKey: args.bitgoPubKey,
-      walletPassphrase: args.walletPassword,
-      recoveryDestination: args.recoveryDestination,
-      scan: 20,
-      ignoreAddressTypes: ["p2wsh"],
-      recoveryProvider: BlockchairApi.forCoin(coin.getChain(), {
-        apiToken: args.blockChairApiKey,
-      }),
-    })) as FormattedOfflineVaultTxInfo;
-    const output = Transaction.fromHex(txHex).outs[0];
-    txInfo.unspents = txInfo.unspents.map((u) => {
-      return {
-        ...u,
-        address: utxolib.addressFormat.toCanonicalFormat(
-          u.address,
-          coin.network
-        ),
-      };
+  let userKeyPlainText: string;
+  try {
+    userKeyPlainText = sdk.decrypt({
+      input: args.userKey,
+      password: args.walletPassword,
     });
-    const txBuilder = utxolib.bitgo.createTransactionBuilderForNetwork<number>(
-      coin.network
-    );
-    txInfo.unspents.forEach((unspent) => {
-      const { txid, vout } = utxolib.bitgo.parseOutputId(unspent.id);
-      txBuilder.addInput(
-        txid,
-        vout,
-        0xffffffff,
-        utxolib.address.toOutputScript(unspent.address, coin.network),
-        unspent.value
-      );
-    });
-    console.log("txHex", txHex);
-    console.log("txInfo", JSON.stringify(txInfo, null, 2));
-    txBuilder.addOutput(
-      utxolib.addressFormat.toCanonicalFormat(
-        args.recoveryDestination,
-        coin.network
-      ),
-      output.value
-    );
-    return {
-      txBuilder,
-      unspents: txInfo.unspents,
-    };
-  })();
-
-  // Transaction
-
-  // sign with backup key
-  const userKeyBase58 = sdk.decrypt({
-    password: args.walletPassword,
-    input: args.userKey,
-  });
-  const backupKeyBase58 = sdk.decrypt({
-    password: args.walletPassword,
-    input: args.backupKey,
-  });
-
-  const keys = [
-    bip32.fromBase58(userKeyBase58),
-    bip32.fromBase58(backupKeyBase58),
-    bip32.fromBase58(args.bitgoPubKey),
-  ];
-  if (!isTriple(keys)) {
-    throw new Error(`expected key triple`);
+  } catch (e) {
+    console.log("Failed to decrypt user key.", e);
+    throw e;
   }
-  // no derive path for v1 safe wallets
-  const walletKeys = new utxolib.bitgo.RootWalletKeys(keys, /*["","","",]*/);
 
-  const tx = signAndVerifyWalletTransaction<number>(
-    txBuilder,
-    unspents,
-    new utxolib.bitgo.WalletUnspentSigner<utxolib.bitgo.RootWalletKeys>(
-      walletKeys,
-      walletKeys.user,
-      walletKeys.backup
-    ),
-    { isLastSignature: true }
-  );
+  let backupKeyPlainText: string;
+  try {
+    backupKeyPlainText = sdk.decrypt({
+      input: args.backupKey,
+      password: args.walletPassword,
+    });
+  } catch (e) {
+    console.log("Failed to decrypt backup key.", e);
+    throw e;
+  }
 
-  console.log("signed tx", tx.toHex());
+  let userSigner: utxolib.ECPairInterface;
+  try {
+    userSigner = utxolib.ECPair.fromWIF(userKeyPlainText, coin.network);
+  } catch (e) {
+    console.log("Failed to parse decrypted user key.", e);
+    throw e;
+  }
+
+  let backupSigner: utxolib.ECPairInterface;
+  try {
+    backupSigner =  utxolib.ECPair.fromWIF(backupKeyPlainText, coin.network);
+  } catch (e) {
+    console.log("Failed to parse decrypted backup key.", e);
+    throw e;
+  }
+
+  const psbt = utxolib.bitgo.createPsbtForNetwork({ network: coin.network });
+  psbt.addInput({
+    hash: args.inputHash,
+    index: 0,
+    redeemScript: Buffer.from(args.redeemScript,'hex'),
+    nonWitnessUtxo: Buffer.from(args.nonWitnessUtxo,'hex'),
+  });
+  psbt.addOutput({
+    script: utxolib.address.toOutputScript(args.recoveryDestination, coin.network),
+    value: BigInt(args.balance) - BigInt(args.fee),
+  });
+
+  psbt.signAllInputs(userSigner);
+  psbt.signAllInputs(backupSigner);
+
+  psbt.validateSignaturesOfAllInputs();
+  psbt.finalizeAllInputs();
+  const fullySignedTx = psbt.extractTransaction();
+  console.log(`Signed Tx: ${fullySignedTx.toHex()}`);
 }
 
 const app = command({
-  name: "yarn restore",
+  name: "yarn recover",
   args: {
-    walletId: walletIdFlag,
     env: envFlag,
     walletPassword: passwordFlag,
-    accessToken: accessTokenFlag,
     recoveryDestination: recoveryDestinationFlag,
-    blockChairApiKey: blockChairApiKeyFlag,
     userKey: userKeyFlag,
     backupKey: backupKeyFlag,
-    bitgoPubKey: bitgoPubKeyFlag,
+    redeemScript: redeemScriptFlag,
+    nonWitnessUtxo: nonWitnessUtxoFlag,
+    balance: recoveryBalanceFlag,
+    fee: feeFlag,
+    inputHash: inputHashFlag,
   },
   handler: async (args) => {
     try {

@@ -4,21 +4,6 @@ import {
 } from "@bitgo/sdk-core";
 import { string, option, Type } from "cmd-ts";
 
-export const accessTokenFlag = option({
-  type: string,
-  defaultValue: () => {
-    const accessToken = process.env.ACCESS_TOKEN;
-    if (!accessToken) {
-      throw new Error("ACCESS_TOKEN env var not set");
-    }
-    return accessToken;
-  },
-  long: "accessToken",
-  short: "a",
-  description:
-    "BitGo user account access token. If not provided, the env var ACCESS_TOKEN will be used.",
-});
-
 export const passwordFlag = option({
   type: string,
   defaultValue: () => {
@@ -33,19 +18,18 @@ export const passwordFlag = option({
   description: "The wallet passphrase for the wallet associated to walletId.",
 });
 
-export const walletIdFlag = option({
+export const accessTokenFlag = option({
   type: string,
   defaultValue: () => {
-    const walletId = process.env.WALLET_ID;
-    if (!walletId) {
-      throw new Error("WALLET_ID env var not set");
+    const accessToken = process.env.ACCESS_TOKEN;
+    if (!accessToken) {
+      throw new Error("ACCESS_TOKEN env var not set");
     }
-    return walletId;
+    return accessToken;
   },
-  long: "walletId",
-  short: "w",
-  description:
-    "BitGo wallet id. If not provided, the env var WALLET_ID will be used.",
+  long: "accessToken",
+  short: "a",
+  description: "The access token to the env.",
 });
 
 export const recoveryDestinationFlag = option({
@@ -62,34 +46,6 @@ export const recoveryDestinationFlag = option({
   description:
     "Recovery destination. If not provided, the env var RECOVERY_DESTINATION will be used.",
 });
-
-export const blockChairApiKeyFlag = option({
-  type: string,
-  defaultValue: () => {
-    const apiKey = process.env.BLOCK_CHAIR_API_KEY;
-    if (!apiKey) {
-      throw new Error("BLOCK_CHAIR_API_KEY env var not set");
-    }
-    return apiKey;
-  },
-  long: "blockChairApiKey",
-  short: "blockChairApiKey",
-  description:
-    "Recovery destination. If not provided, the env var BLOCK_CHAIR_API_KEY will be used.",
-});
-
-export const keyTypes = ["user", "backup"] as const;
-
-export type KeyType = (typeof keyTypes)[number];
-
-export const KeyTypeDecoder: Type<string, KeyType> = {
-  async from(str: string): Promise<KeyType> {
-    if (!keyTypes.includes(str as KeyType)) {
-      throw new Error(`invalid keyType ${str}`);
-    }
-    return str as KeyType;
-  },
-};
 
 export const envDecoder: Type<string, EnvironmentName> = {
   async from(str: string): Promise<EnvironmentName> {
@@ -145,21 +101,6 @@ export const backupKeyFlag = option({
       "Encrypted backup private key (xprv)",
 });
 
-export const bitgoPubKeyFlag = option({
-  type: string,
-  defaultValue: () => {
-    const bitgoPubkey = process.env.BITGO_PUB_KEY;
-    if (!bitgoPubkey) {
-      throw new Error("BITGO_PUB_KEY env var not set");
-    }
-    return bitgoPubkey;
-  },
-  long: "bitgoPubkey",
-  short: "g",
-  description:
-      "Bitgo public key in plain text",
-});
-
 export const redeemScriptFlag = option({
   type: string,
   defaultValue: () => {
@@ -173,4 +114,64 @@ export const redeemScriptFlag = option({
   short: "r",
   description:
       "Redeem script in plain text",
+});
+
+export const nonWitnessUtxoFlag = option({
+  type: string,
+  defaultValue: () => {
+    const nonWitnessUtxo = process.env.NON_WITNESS_UTXO;
+    if (!nonWitnessUtxo) {
+      throw new Error("NON_WITNESS_UTXO env var not set");
+    }
+    return nonWitnessUtxo;
+  },
+  long: "nonWitnessUtxo",
+  short: "x",
+  description:
+      "non-witness UTXO",
+});
+
+export const recoveryBalanceFlag = option({
+  type: string,
+  defaultValue: () => {
+    const recoveryBalance = process.env.RECOVERY_BALANCE;
+    if (!recoveryBalance) {
+      throw new Error("RECOVERY_BALANCE env var not set");
+    }
+    return recoveryBalance;
+  },
+  long: "recoveryBalance",
+  short: "b",
+  description:
+      "Amount of coin to recover",
+});
+
+export const feeFlag = option({
+  type: string,
+  defaultValue: () => {
+    const fee = process.env.FEE;
+    if (!fee) {
+      throw new Error("FEE env var not set");
+    }
+    return fee;
+  },
+  long: "fee",
+  short: "f",
+  description:
+      "Recovery transaction on-chain fee",
+});
+
+export const inputHashFlag = option({
+  type: string,
+  defaultValue: () => {
+    const inputHash = process.env.INPUT_HASH;
+    if (!inputHash) {
+      throw new Error("INPUT_HASH env var not set");
+    }
+    return inputHash;
+  },
+  long: "inputHash",
+  short: "a",
+  description:
+      "transaction input hash",
 });

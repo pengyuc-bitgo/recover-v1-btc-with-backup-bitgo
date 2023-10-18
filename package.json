@@ -1,11 +1,11 @@
 {
-  "name": "verify-bitgo-keys",
+  "name": "recover-v1-safe-wallet",
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "start": "yarn run ts-node index.ts",
-    "create": "yarn run ts-node create.ts",
+    "test": "yarn run ts-node encrypt.ts",
+    "create": "yarn run ts-node createWallet.ts",
     "recover": "yarn run ts-node recoverUtxoUserBackup.ts"
   },
   "repository": {
@@ -23,8 +23,8 @@
     "@bitgo/blockapis": "^1.7.1",
     "@bitgo/sdk-api": "^1.11.3",
     "@bitgo/sdk-core": "^8.11.0",
-    "@bitgo/utxo-lib": "^9.3.0",
-    "bitgo": "^19.5.0",
+    "@bitgo/utxo-lib": "^9.14.0",
+    "bitgo": "^19.18.0",
     "cmd-ts": "^0.13.0",
     "dotenv": "^16.3.1",
     "ts-node": "^10.9.1",
