@@ -1,8 +1,9 @@
 import * as dotenv from "dotenv";
-import {BaseCoin, EnvironmentName,} from "@bitgo/sdk-core";
+import {BaseCoin, EnvironmentName} from "@bitgo/sdk-core";
 import {BitGo} from "bitgo";
-import {command, run} from "cmd-ts";
+import {command, number, run} from "cmd-ts";
 import {
+  accessTokenFlag,
   backupKeyFlag,
   envFlag,
   feeFlag, inputHashFlag,
@@ -11,7 +12,7 @@ import {
   recoveryBalanceFlag,
   recoveryDestinationFlag,
   redeemScriptFlag,
-  userKeyFlag,
+  userKeyFlag, walletIdFlag,
 } from "./common";
 import {AbstractUtxoCoin,} from "@bitgo/abstract-utxo";
 import * as utxolib from "@bitgo/utxo-lib";
@@ -26,6 +27,8 @@ function assertIsUtxo(coin: BaseCoin): asserts coin is AbstractUtxoCoin {
 
 export async function main(args: {
   env: EnvironmentName;
+  accessToken: string;
+  walletId: string;
   walletPassword: string;
   recoveryDestination: string;
   userKey: string;
@@ -36,13 +39,13 @@ export async function main(args: {
   fee: string;
   inputHash: string;
 }) {
-  const sdk = new BitGo({ env: args.env });
+  const sdk = new BitGo({ env: args.env, accessToken: args.accessToken });
   const coin = sdk.coin(args.env === 'prod' ? "btc" : "tbtc");
   assertIsUtxo(coin);
 
-  let userKeyPlainText: string;
+  let userKeyWif: string;
   try {
-    userKeyPlainText = sdk.decrypt({
+    userKeyWif = sdk.decrypt({
       input: args.userKey,
       password: args.walletPassword,
     });
@@ -51,9 +54,9 @@ export async function main(args: {
     throw e;
   }
 
-  let backupKeyPlainText: string;
+  let backupKeyWif: string;
   try {
-    backupKeyPlainText = sdk.decrypt({
+    backupKeyWif = sdk.decrypt({
       input: args.backupKey,
       password: args.walletPassword,
     });
@@ -61,48 +64,45 @@ export async function main(args: {
     console.log("Failed to decrypt backup key.", e);
     throw e;
   }
-
-  let userSigner: utxolib.ECPairInterface;
-  try {
-    userSigner = utxolib.ECPair.fromWIF(userKeyPlainText, coin.network);
-  } catch (e) {
-    console.log("Failed to parse decrypted user key.", e);
-    throw e;
-  }
-
-  let backupSigner: utxolib.ECPairInterface;
-  try {
-    backupSigner =  utxolib.ECPair.fromWIF(backupKeyPlainText, coin.network);
-  } catch (e) {
-    console.log("Failed to parse decrypted backup key.", e);
-    throw e;
-  }
-
-  const psbt = utxolib.bitgo.createPsbtForNetwork({ network: coin.network });
-  psbt.addInput({
-    hash: args.inputHash,
-    index: 0,
-    redeemScript: Buffer.from(args.redeemScript,'hex'),
-    nonWitnessUtxo: Buffer.from(args.nonWitnessUtxo,'hex'),
-  });
-  psbt.addOutput({
-    script: utxolib.address.toOutputScript(args.recoveryDestination, coin.network),
-    value: BigInt(args.balance) - BigInt(args.fee),
+  await sdk.unlock({ otp: '000000' });
+  const wallet = await sdk.wallets().get({ id: args.walletId, gpk: true });
+  await sdk.lock();
+  const createdTx = await wallet.createTransaction({
+    recipients: {
+      [args.recoveryDestination]: Number(args.balance),
+    },
+    fee: Number(args.fee),
+    bitgoFee:{
+      amount: 0,
+      address: '',
+    }
   });
 
-  psbt.signAllInputs(userSigner);
-  psbt.signAllInputs(backupSigner);
+  const halfSignedTx = await wallet.signTransaction({
+    transactionHex: createdTx.transactionHex,
+    unspents: createdTx.unspents,
+    signingKey: userKeyWif,
+    validate: true
+  });
 
-  psbt.validateSignaturesOfAllInputs();
-  psbt.finalizeAllInputs();
-  const fullySignedTx = psbt.extractTransaction();
-  console.log(`Signed Tx: ${fullySignedTx.toHex()}`);
+  const signedTx = await wallet.signTransaction({
+    transactionHex: halfSignedTx.tx,
+    unspents: createdTx.unspents,
+    signingKey: backupKeyWif,
+    validate: true,
+    fullLocalSigning: true,
+  });
+
+  console.log(`Signed Tx: ${signedTx.tx}`);
+
 }
 
 const app = command({
   name: "yarn recover",
   args: {
     env: envFlag,
+    walletId: walletIdFlag,
+    accessToken: accessTokenFlag,
     walletPassword: passwordFlag,
     recoveryDestination: recoveryDestinationFlag,
     userKey: userKeyFlag,

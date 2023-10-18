@@ -4,6 +4,21 @@ import {
 } from "@bitgo/sdk-core";
 import { string, option, Type } from "cmd-ts";
 
+export const walletIdFlag = option({
+  type: string,
+  defaultValue: () => {
+    const walletId = process.env.WALLET_ID;
+    if (!walletId) {
+      throw new Error("WALLET_ID env var not set");
+    }
+    return walletId;
+  },
+  long: "walletId",
+  short: "i",
+  description: "The wallet id.",
+});
+
+
 export const passwordFlag = option({
   type: string,
   defaultValue: () => {
