@@ -1,18 +1,18 @@
 import * as dotenv from "dotenv";
 import {BaseCoin, EnvironmentName} from "@bitgo/sdk-core";
 import {BitGo} from "bitgo";
-import {command, number, run} from "cmd-ts";
+import {command, run} from "cmd-ts";
 import {
   accessTokenFlag,
   backupKeyFlag,
   envFlag,
-  feeFlag, inputHashFlag,
-  nonWitnessUtxoFlag,
+  feeFlag,
+  oneTimePasscodeFlag,
   passwordFlag,
   recoveryBalanceFlag,
   recoveryDestinationFlag,
-  redeemScriptFlag,
-  userKeyFlag, walletIdFlag,
+  userKeyFlag,
+  walletIdFlag,
 } from "./common";
 import {AbstractUtxoCoin,} from "@bitgo/abstract-utxo";
 import * as utxolib from "@bitgo/utxo-lib";
@@ -28,20 +28,22 @@ function assertIsUtxo(coin: BaseCoin): asserts coin is AbstractUtxoCoin {
 export async function main(args: {
   env: EnvironmentName;
   accessToken: string;
+  otp: string;
   walletId: string;
   walletPassword: string;
   recoveryDestination: string;
   userKey: string;
   backupKey: string;
-  redeemScript: string;
-  nonWitnessUtxo: string;
   balance: string;
   fee: string;
-  inputHash: string;
 }) {
   const sdk = new BitGo({ env: args.env, accessToken: args.accessToken });
   const coin = sdk.coin(args.env === 'prod' ? "btc" : "tbtc");
   assertIsUtxo(coin);
+
+  await sdk.unlock({ otp: args.otp });
+  const wallet = await sdk.wallets().get({ id: args.walletId, gpk: true });
+  await sdk.lock();
 
   let userKeyWif: string;
   try {
@@ -64,9 +66,6 @@ export async function main(args: {
     console.log("Failed to decrypt backup key.", e);
     throw e;
   }
-  await sdk.unlock({ otp: '000000' });
-  const wallet = await sdk.wallets().get({ id: args.walletId, gpk: true });
-  await sdk.lock();
   const createdTx = await wallet.createTransaction({
     recipients: {
       [args.recoveryDestination]: Number(args.balance),
@@ -93,8 +92,12 @@ export async function main(args: {
     fullLocalSigning: true,
   });
 
-  console.log(`Signed Tx: ${signedTx.tx}`);
 
+  const txb = utxolib.bitgo.createTransactionBuilderFromTransaction(utxolib.bitgo.createTransactionFromHex(signedTx.tx, coin.network));
+  const completedTx = txb.build();
+  const completedRawTx = completedTx.toHex();
+  console.log('----------------------------------')
+  console.log(`Signed Raw Tx: ${completedRawTx}`);
 }
 
 const app = command({
@@ -103,15 +106,13 @@ const app = command({
     env: envFlag,
     walletId: walletIdFlag,
     accessToken: accessTokenFlag,
+    otp: oneTimePasscodeFlag,
     walletPassword: passwordFlag,
     recoveryDestination: recoveryDestinationFlag,
     userKey: userKeyFlag,
     backupKey: backupKeyFlag,
-    redeemScript: redeemScriptFlag,
-    nonWitnessUtxo: nonWitnessUtxoFlag,
     balance: recoveryBalanceFlag,
     fee: feeFlag,
-    inputHash: inputHashFlag,
   },
   handler: async (args) => {
     try {

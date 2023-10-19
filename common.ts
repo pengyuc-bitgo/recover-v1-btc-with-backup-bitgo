@@ -44,7 +44,21 @@ export const accessTokenFlag = option({
   },
   long: "accessToken",
   short: "a",
-  description: "The access token to the env.",
+  description: "The access token to login to BitGo.",
+});
+
+export const oneTimePasscodeFlag = option({
+  type: string,
+  defaultValue: () => {
+    const oneTimePasscode = process.env.OTP;
+    if (!oneTimePasscode) {
+      throw new Error("OTP env var not set");
+    }
+    return oneTimePasscode;
+  },
+  long: "otp",
+  short: "o",
+  description: "The one-time passcode to login to BitGo.",
 });
 
 export const recoveryDestinationFlag = option({
@@ -116,36 +130,6 @@ export const backupKeyFlag = option({
       "Encrypted backup private key (xprv)",
 });
 
-export const redeemScriptFlag = option({
-  type: string,
-  defaultValue: () => {
-    const redeemScript = process.env.REDEEM_SCRIPT;
-    if (!redeemScript) {
-      throw new Error("REDEEM_SCRIPT env var not set");
-    }
-    return redeemScript;
-  },
-  long: "redeemScript",
-  short: "r",
-  description:
-      "Redeem script in plain text",
-});
-
-export const nonWitnessUtxoFlag = option({
-  type: string,
-  defaultValue: () => {
-    const nonWitnessUtxo = process.env.NON_WITNESS_UTXO;
-    if (!nonWitnessUtxo) {
-      throw new Error("NON_WITNESS_UTXO env var not set");
-    }
-    return nonWitnessUtxo;
-  },
-  long: "nonWitnessUtxo",
-  short: "x",
-  description:
-      "non-witness UTXO",
-});
-
 export const recoveryBalanceFlag = option({
   type: string,
   defaultValue: () => {
@@ -156,7 +140,7 @@ export const recoveryBalanceFlag = option({
     return recoveryBalance;
   },
   long: "recoveryBalance",
-  short: "b",
+  short: "r",
   description:
       "Amount of coin to recover",
 });
@@ -174,19 +158,4 @@ export const feeFlag = option({
   short: "f",
   description:
       "Recovery transaction on-chain fee",
-});
-
-export const inputHashFlag = option({
-  type: string,
-  defaultValue: () => {
-    const inputHash = process.env.INPUT_HASH;
-    if (!inputHash) {
-      throw new Error("INPUT_HASH env var not set");
-    }
-    return inputHash;
-  },
-  long: "inputHash",
-  short: "a",
-  description:
-      "transaction input hash",
 });
