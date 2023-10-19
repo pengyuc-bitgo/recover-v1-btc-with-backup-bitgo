@@ -1,30 +1,23 @@
 {
-  "name": "verify-bitgo-keys",
+  "name": "recover-v1-safe-wallet",
   "version": "1.0.0",
   "description": "",
-  "main": "index.ts",
+  "main": "recoverUtxoUserBackup.ts",
   "scripts": {
-    "start": "yarn run ts-node index.ts",
-    "create": "yarn run ts-node create.ts",
     "recover": "yarn run ts-node recoverUtxoUserBackup.ts"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zahin-mohammad/verify-bitgo-keys.git"
+    "url": "git+https://github.com/pengyuc-bitgo/recover-v1-btc-with-backup-bitgo.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/zahin-mohammad/verify-bitgo-keys/issues"
+    "url": "https://github.com/pengyuc-bitgo/recover-v1-btc-with-backup-bitgo/issues"
   },
-  "homepage": "https://github.com/zahin-mohammad/verify-bitgo-keys#readme",
+  "homepage": "https://github.com/pengyuc-bitgo/recover-v1-btc-with-backup-bitgo#readme",
   "dependencies": {
-    "@bitgo/abstract-utxo": "^3.3.0",
-    "@bitgo/blockapis": "^1.7.1",
-    "@bitgo/sdk-api": "^1.11.3",
-    "@bitgo/sdk-core": "^8.11.0",
-    "@bitgo/utxo-lib": "^9.3.0",
-    "bitgo": "^19.5.0",
+    "bitgo": "^19.19.0",
     "cmd-ts": "^0.13.0",
     "dotenv": "^16.3.1",
     "ts-node": "^10.9.1",

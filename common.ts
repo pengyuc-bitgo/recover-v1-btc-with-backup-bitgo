@@ -4,20 +4,20 @@ import {
 } from "@bitgo/sdk-core";
 import { string, option, Type } from "cmd-ts";
 
-export const accessTokenFlag = option({
+export const walletIdFlag = option({
   type: string,
   defaultValue: () => {
-    const accessToken = process.env.ACCESS_TOKEN;
-    if (!accessToken) {
-      throw new Error("ACCESS_TOKEN env var not set");
+    const walletId = process.env.WALLET_ID;
+    if (!walletId) {
+      throw new Error("WALLET_ID env var not set");
     }
-    return accessToken;
+    return walletId;
   },
-  long: "accessToken",
-  short: "a",
-  description:
-    "BitGo user account access token. If not provided, the env var ACCESS_TOKEN will be used.",
+  long: "walletId",
+  short: "i",
+  description: "The wallet id.",
 });
+
 
 export const passwordFlag = option({
   type: string,
@@ -33,19 +33,32 @@ export const passwordFlag = option({
   description: "The wallet passphrase for the wallet associated to walletId.",
 });
 
-export const walletIdFlag = option({
+export const accessTokenFlag = option({
   type: string,
   defaultValue: () => {
-    const walletId = process.env.WALLET_ID;
-    if (!walletId) {
-      throw new Error("WALLET_ID env var not set");
+    const accessToken = process.env.ACCESS_TOKEN;
+    if (!accessToken) {
+      throw new Error("ACCESS_TOKEN env var not set");
     }
-    return walletId;
+    return accessToken;
   },
-  long: "walletId",
-  short: "w",
-  description:
-    "BitGo wallet id. If not provided, the env var WALLET_ID will be used.",
+  long: "accessToken",
+  short: "a",
+  description: "The access token to login to BitGo.",
+});
+
+export const oneTimePasscodeFlag = option({
+  type: string,
+  defaultValue: () => {
+    const oneTimePasscode = process.env.OTP;
+    if (!oneTimePasscode) {
+      throw new Error("OTP env var not set");
+    }
+    return oneTimePasscode;
+  },
+  long: "otp",
+  short: "o",
+  description: "The one-time passcode to login to BitGo.",
 });
 
 export const recoveryDestinationFlag = option({
@@ -62,34 +75,6 @@ export const recoveryDestinationFlag = option({
   description:
     "Recovery destination. If not provided, the env var RECOVERY_DESTINATION will be used.",
 });
-
-export const blockChairApiKeyFlag = option({
-  type: string,
-  defaultValue: () => {
-    const apiKey = process.env.BLOCK_CHAIR_API_KEY;
-    if (!apiKey) {
-      throw new Error("BLOCK_CHAIR_API_KEY env var not set");
-    }
-    return apiKey;
-  },
-  long: "blockChairApiKey",
-  short: "blockChairApiKey",
-  description:
-    "Recovery destination. If not provided, the env var BLOCK_CHAIR_API_KEY will be used.",
-});
-
-export const keyTypes = ["user", "backup"] as const;
-
-export type KeyType = (typeof keyTypes)[number];
-
-export const KeyTypeDecoder: Type<string, KeyType> = {
-  async from(str: string): Promise<KeyType> {
-    if (!keyTypes.includes(str as KeyType)) {
-      throw new Error(`invalid keyType ${str}`);
-    }
-    return str as KeyType;
-  },
-};
 
 export const envDecoder: Type<string, EnvironmentName> = {
   async from(str: string): Promise<EnvironmentName> {
@@ -145,32 +130,32 @@ export const backupKeyFlag = option({
       "Encrypted backup private key (xprv)",
 });
 
-export const bitgoPubKeyFlag = option({
+export const recoveryBalanceFlag = option({
   type: string,
   defaultValue: () => {
-    const bitgoPubkey = process.env.BITGO_PUB_KEY;
-    if (!bitgoPubkey) {
-      throw new Error("BITGO_PUB_KEY env var not set");
+    const recoveryBalance = process.env.RECOVERY_BALANCE;
+    if (!recoveryBalance) {
+      throw new Error("RECOVERY_BALANCE env var not set");
     }
-    return bitgoPubkey;
+    return recoveryBalance;
   },
-  long: "bitgoPubkey",
-  short: "g",
-  description:
-      "Bitgo public key in plain text",
-});
-
-export const redeemScriptFlag = option({
-  type: string,
-  defaultValue: () => {
-    const redeemScript = process.env.REDEEM_SCRIPT;
-    if (!redeemScript) {
-      throw new Error("REDEEM_SCRIPT env var not set");
-    }
-    return redeemScript;
-  },
-  long: "redeemScript",
+  long: "recoveryBalance",
   short: "r",
   description:
-      "Redeem script in plain text",
+      "Amount of coin to recover",
+});
+
+export const feeFlag = option({
+  type: string,
+  defaultValue: () => {
+    const fee = process.env.FEE;
+    if (!fee) {
+      throw new Error("FEE env var not set");
+    }
+    return fee;
+  },
+  long: "fee",
+  short: "f",
+  description:
+      "Recovery transaction on-chain fee",
 });
