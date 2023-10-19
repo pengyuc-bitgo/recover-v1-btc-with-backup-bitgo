@@ -1,10 +1,26 @@
 {
   "name": "recover-v1-safe-wallet",
   "version": "1.0.0",
-  "description": "",
-  "main": "recoverUtxoUserBackup.ts",
+  "description": "Recover v1 safe wallet funds with user and backup keys",
+  "main": "index.ts",
   "scripts": {
-    "recover": "yarn run ts-node recoverUtxoUserBackup.ts"
+    "build": "npx tsc",
+    "package": "pkg ./",
+    "recover": "yarn run ts-node index.ts"
+  },
+  "bin": {
+    "recover": "./dist/index.js"
+  },
+  "pkg": {
+    "scripts": [
+      "dist/index.js",
+      "dist/common.js",
+      "node_modules/fp-ts/function",
+      "node_modules/fp-ts/Either",
+      "node_modules/fp-ts/Json",
+      "node_modules/fp-ts/Option",
+      "node_modules/fp-ts/ReadonlyNonEmptyArray"
+    ]
   },
   "repository": {
     "type": "git",
@@ -17,7 +33,11 @@
   },
   "homepage": "https://github.com/pengyuc-bitgo/recover-v1-btc-with-backup-bitgo#readme",
   "dependencies": {
-    "bitgo": "^19.19.0",
+    "@bitgo/abstract-utxo": "^3.17.0",
+    "@bitgo/utxo-lib": "^9.15.0",
+    "@bitgo/sdk-api": "^1.23.0",
+    "@bitgo/sdk-core": "^8.25.0",
+    "@bitgo/sdk-coin-btc": "^1.7.12",
     "cmd-ts": "^0.13.0",
     "dotenv": "^16.3.1",
     "ts-node": "^10.9.1",

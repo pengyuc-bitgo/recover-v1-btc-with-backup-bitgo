@@ -1,12 +1,10 @@
 ## Installation
 
-Install Node 16 and yarn:
-```shell
-nvm install 16 && nvm use 16
-npm install -g yarn
-yarn install
-yarn
-```
+Install NodeJS 18 from [their website](https://nodejs.org/en/download/current/) according to your plateform.
+Use one of the executable for your OS. It will be referred to as `recover-v1-safe-wallet` in this document.
+1. recover-v1-safe-wallet-linux
+2. recover-v1-safe-wallet-macos
+3. recover-v1-safe-wallet-win.exe
 
 ## Usage
 To recover the BTC in your wallet, you will need to input the following data:
@@ -36,12 +34,12 @@ USER_KEY=<Encrypted user key> # looks like: {"iv":"...", ...}
 BACKUP_KEY=<Encrypted backup key> # looks like: {"iv":"...", ...}
 ```
 2. Run the script with one-time password:
-```
-yarn run recovery --otp <BitGo user OTP code>
+```shell
+recover-v1-safe-wallet --otp <BitGo user OTP code>
 ```
 You can find all command line arguments with `-h`:
 ```shell
-yarn run recover -h
+recover-v1-safe-wallet -h
 ```
 
 ## Broadcasting the transaction

@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 import {BaseCoin, EnvironmentName} from "@bitgo/sdk-core";
-import {BitGo} from "bitgo";
+import { BitGoAPI } from '@bitgo/sdk-api';
 import {command, run} from "cmd-ts";
 import {
   accessTokenFlag,
@@ -16,6 +16,7 @@ import {
 } from "./common";
 import {AbstractUtxoCoin,} from "@bitgo/abstract-utxo";
 import * as utxolib from "@bitgo/utxo-lib";
+import * as btcSdk from "@bitgo/sdk-coin-btc";
 
 dotenv.config();
 
@@ -37,7 +38,8 @@ export async function main(args: {
   balance: string;
   fee: string;
 }) {
-  const sdk = new BitGo({ env: args.env, accessToken: args.accessToken });
+  const sdk = new BitGoAPI({ env: args.env, accessToken: args.accessToken });
+  btcSdk.register(sdk);
   const coin = sdk.coin(args.env === 'prod' ? "btc" : "tbtc");
   assertIsUtxo(coin);
 
@@ -101,7 +103,7 @@ export async function main(args: {
 }
 
 const app = command({
-  name: "yarn run recover",
+  name: "recover-v1-safe-wallet -h",
   args: {
     env: envFlag,
     walletId: walletIdFlag,
