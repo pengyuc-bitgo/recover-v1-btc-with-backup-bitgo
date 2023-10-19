@@ -101,7 +101,7 @@ export async function main(args: {
 }
 
 const app = command({
-  name: "yarn recover",
+  name: "yarn run recover",
   args: {
     env: envFlag,
     walletId: walletIdFlag,
