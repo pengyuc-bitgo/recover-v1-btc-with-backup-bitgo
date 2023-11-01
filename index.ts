@@ -29,7 +29,7 @@ function assertIsUtxo(coin: BaseCoin): asserts coin is AbstractUtxoCoin {
 export async function main(args: {
   env: EnvironmentName;
   accessToken: string;
-  otp: string;
+  otp?: string;
   walletId: string;
   walletPassword: string;
   recoveryDestination: string;
@@ -43,9 +43,10 @@ export async function main(args: {
   const coin = sdk.coin(args.env === 'prod' ? "btc" : "tbtc");
   assertIsUtxo(coin);
 
-  await sdk.unlock({ otp: args.otp });
+  if (args.otp){
+    await sdk.unlock({ otp: args.otp });
+  }
   const wallet = await sdk.wallets().get({ id: args.walletId, gpk: true });
-  await sdk.lock();
 
   let userKeyWif: string;
   try {

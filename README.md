@@ -9,7 +9,7 @@ Use one of the executable for your OS. It will be referred to as `recover-v1-saf
 ## Usage
 To recover the BTC in your wallet, you will need to input the following data:
 1. BitGo user account access token, make sure you have enough spending limit.
-2. One-time password (OTP) to login
+2. One-time password (OTP) to login; only if you need to unlock your access token.
 3. Wallet password
 4. Recovery destination. This is the address where the recovered funds will be sent to.
 5. User private key. This is the encrypted user private key. You can find it on the key card.
@@ -33,7 +33,11 @@ RECOVERY_DESTINATION=<Bitcoin address to send the recovery funds to>
 USER_KEY=<Encrypted user key> # looks like: {"iv":"...", ...}
 BACKUP_KEY=<Encrypted backup key> # looks like: {"iv":"...", ...}
 ```
-2. Run the script with one-time password:
+2. Run the script:
+```shell
+recover-v1-safe-wallet
+```
+If your token needs to be unlocked, you should specify the OTP code with the `--otp` argument:
 ```shell
 recover-v1-safe-wallet --otp <BitGo user OTP code>
 ```

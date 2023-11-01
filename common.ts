@@ -2,7 +2,7 @@ import {
   EnvironmentName,
   Environments,
 } from "@bitgo/sdk-core";
-import { string, option, Type } from "cmd-ts";
+import {string, option, Type, optional} from "cmd-ts";
 
 export const walletIdFlag = option({
   type: string,
@@ -48,17 +48,10 @@ export const accessTokenFlag = option({
 });
 
 export const oneTimePasscodeFlag = option({
-  type: string,
-  defaultValue: () => {
-    const oneTimePasscode = process.env.OTP;
-    if (!oneTimePasscode) {
-      throw new Error("OTP env var not set");
-    }
-    return oneTimePasscode;
-  },
+  type: optional(string),
   long: "otp",
   short: "o",
-  description: "The one-time passcode to login to BitGo.",
+  description: "The optional one-time passcode to login to BitGo. Only provide this if the token needs to be unlocked.",
 });
 
 export const recoveryDestinationFlag = option({
